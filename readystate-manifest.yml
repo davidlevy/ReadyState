@@ -17,3 +17,6 @@ capabilities:
   - id: mcp-upsert-capability
     description: Outil MCP permettant aux agents d'ajouter ou de mettre à jour dynamiquement des capacités
     requiredFlag: null
+  - id: mcp-get-capability-status
+    description: Outil MCP permettant de lire le statut de déploiement et les flags d'une capacité, supporte la recherche par annotation
+    requiredFlag: null
