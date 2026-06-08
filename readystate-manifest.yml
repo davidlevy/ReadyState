@@ -1,7 +1,6 @@
 capabilities:
   - id: core-webhook-ingestion
     description: Ingestion des webhooks de déploiement GitHub et synchronisation SQLite
-    requiredFlag: null
     annotations:
       linear.app/issue: LIN-123
       jira.com/ticket: PROJ-456
@@ -10,13 +9,9 @@ capabilities:
     requiredFlag: mcp_enabled
   - id: dynamic-manifest-parser
     description: Parseur dynamique du readystate-manifest.yml
-    requiredFlag: null
   - id: mcp-list-recent-capabilities
     description: Outil MCP permettant de lister les dernières capacités modifiées
-    requiredFlag: null
   - id: mcp-upsert-capability
     description: Outil MCP permettant aux agents d'ajouter ou de mettre à jour dynamiquement des capacités
-    requiredFlag: null
   - id: mcp-get-capability-status
     description: Outil MCP permettant de lire le statut de déploiement et les flags d'une capacité, supporte la recherche par annotation
-    requiredFlag: null

@@ -18,7 +18,7 @@ description: Ensures that the readystate-manifest.yml file is always kept in syn
    ```yaml
    - id: kebab-case-name-of-the-feature
      description: A clear, concise description of what the feature does (in English or match the existing language).
-     requiredFlag: optional_feature_flag_name # or null if always enabled
+     requiredFlag: optional_feature_flag_name # Omit this line completely if there is no flag
      annotations: # Optional but recommended: link to external tickets
        jira.com/ticket: PROJ-123
        linear.app/issue: LIN-123
