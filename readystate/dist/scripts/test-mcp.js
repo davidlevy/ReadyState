@@ -29,7 +29,7 @@ async function main() {
         console.error("Webhook test failed (is Hono server running on 3000?):", err.message, "\n");
     }
     console.log("Calling upsert_capability for api-checkout-v3 on staging...");
-    const upsertResult = await client.callTool({
+    const upsertResult1 = await client.callTool({
         name: "upsert_capability",
         arguments: {
             capabilityId: "api-checkout-v3",
@@ -39,16 +39,25 @@ async function main() {
             author: "agent_test_runner"
         }
     });
-    console.log("Upsert Result:", JSON.stringify(upsertResult, null, 2));
-    console.log("\nCalling get_capability_status for api-checkout-v3 on staging...");
-    const result = await client.callTool({
-        name: "get_capability_status",
+    console.log("Upsert Result Staging:", JSON.stringify(upsertResult1, null, 2));
+    console.log("\nCalling upsert_capability for api-checkout-v3 on production...");
+    const upsertResult2 = await client.callTool({
+        name: "upsert_capability",
         arguments: {
             capabilityId: "api-checkout-v3",
-            environment: "staging"
+            environment: "production",
+            description: "Test description for v3",
+            requiredFlag: "test_flag_v3",
+            author: "agent_test_runner"
         }
     });
-    console.log("Result:", JSON.stringify(result, null, 2));
+    console.log("Upsert Result Production:", JSON.stringify(upsertResult2, null, 2));
+    const { PrismaClient } = await import("@prisma/client");
+    const prisma = new PrismaClient();
+    const count = await prisma.capability.count();
+    console.log(`Total capabilities in DB: ${count}`);
+    const v3Count = await prisma.capability.count({ where: { capabilityId: "api-checkout-v3" } });
+    console.log(`Total capabilities for 'api-checkout-v3': ${v3Count}`);
     process.exit(0);
 }
 main().catch(console.error);

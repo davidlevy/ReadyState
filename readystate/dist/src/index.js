@@ -58,14 +58,13 @@ app.post('/webhooks/github', async (c) => {
                     for (const cap of manifest.capabilities) {
                         if (cap.id && cap.description !== undefined) {
                             await prisma.capability.upsert({
-                                where: { id: cap.id },
+                                where: { capabilityId_environmentName: { capabilityId: cap.id, environmentName: environment } },
                                 update: {
-                                    environmentName: environment,
                                     description: cap.description,
                                     requiredFlag: cap.requiredFlag || null
                                 },
                                 create: {
-                                    id: cap.id,
+                                    capabilityId: cap.id,
                                     description: cap.description,
                                     requiredFlag: cap.requiredFlag || null,
                                     environmentName: environment

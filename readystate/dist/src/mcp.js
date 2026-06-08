@@ -1,5 +1,42 @@
 import * as dotenv from 'dotenv';
-dotenv.config({ path: '/app/data/.env' });
+import * as path from 'path';
+import * as fs from 'fs';
+import { fileURLToPath } from 'url';
+const originalLog = console.log;
+console.log = () => { };
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// 1. Load main .env (containing DATABASE_URL)
+let mainEnvPath = path.resolve('.env');
+if (!fs.existsSync(mainEnvPath)) {
+    const possibleMainPaths = [
+        path.join(__dirname, '../../.env'), // for dist/src/mcp.js
+        path.join(__dirname, '../.env'), // for src/mcp.ts
+    ];
+    for (const p of possibleMainPaths) {
+        if (fs.existsSync(p)) {
+            mainEnvPath = p;
+            break;
+        }
+    }
+}
+dotenv.config({ path: mainEnvPath });
+// 2. Load tokens .env (containing READYSTATE_READ_TOKEN, etc.)
+let tokensEnvPath = '/app/data/.env';
+if (!fs.existsSync(tokensEnvPath)) {
+    const possibleTokenPaths = [
+        path.join(__dirname, '../../data/.env'), // for dist/src/mcp.js
+        path.join(__dirname, '../data/.env'), // for src/mcp.ts
+        path.resolve('data/.env'),
+    ];
+    for (const p of possibleTokenPaths) {
+        if (fs.existsSync(p)) {
+            tokensEnvPath = p;
+            break;
+        }
+    }
+}
+dotenv.config({ path: tokensEnvPath });
+console.log = originalLog;
 if (!process.env.READYSTATE_READ_TOKEN || !process.env.READYSTATE_WRITE_TOKEN) {
     console.error("FATAL: READYSTATE_READ_TOKEN and READYSTATE_WRITE_TOKEN must be set in environment.");
     process.exit(1);
@@ -58,10 +95,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (request.params.name === "get_capability_status") {
         const { capabilityId, environment } = request.params.arguments;
-        const capability = await prisma.capability.findUnique({
-            where: { id: capabilityId },
+        const capability = await prisma.capability.findFirst({
+            where: { capabilityId, environmentName: environment },
         });
-        if (!capability || capability.environmentName !== environment) {
+        if (!capability) {
             return {
                 content: [{ type: "text", text: JSON.stringify({ status: "not_deployed", reason: "Missing from the currently deployed SHA" }) }],
             };
@@ -94,15 +131,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     else if (request.params.name === "upsert_capability") {
         const { capabilityId, environment, description, requiredFlag, author } = request.params.arguments;
         const capability = await prisma.capability.upsert({
-            where: { id: capabilityId },
+            where: { capabilityId_environmentName: { capabilityId, environmentName: environment } },
             update: {
                 description,
                 requiredFlag: requiredFlag || null,
-                environmentName: environment,
                 updatedBy: author,
             },
             create: {
-                id: capabilityId,
+                capabilityId,
                 description,
                 requiredFlag: requiredFlag || null,
                 environmentName: environment,
