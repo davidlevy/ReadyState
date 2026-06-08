@@ -1,19 +1,24 @@
-# Skill: ReadyState Manifest Auto-Update
+---
+name: readystate-updater
+description: Ensures that the readystate-manifest.json file is always kept in sync with the actual capabilities developed in the project. Use when you add new features.
+---
 
-## Description
-This skill ensures that the `readystate-manifest.json` file is always kept in sync with the actual capabilities developed in the project.
+# ReadyState Manifest Auto-Update
 
-## Trigger
-- Whenever an AI assistant (like you) implements a new feature, capability, integration, or tool in the project.
+## When to use this skill
 
-## Actions to perform
+- Use this whenever you implement a new feature, capability, integration, or tool in the project.
+- This is helpful for keeping our capability registry up-to-date and enabling dogfooding of the ReadyState platform.
+
+## How to use it
+
 1. You must automatically declare the new feature in the `readystate-manifest.json` file located at the root of the project.
 2. Do not wait for the user to ask you to update the manifest. Do it proactively as part of your implementation task.
 3. The format of an entry in `readystate-manifest.json` is as follows:
    ```json
    {
      "id": "kebab-case-name-of-the-feature",
-     "description": "A clear, concise description of what the feature does (in French or English, match the existing language).",
+     "description": "A clear, concise description of what the feature does (in English or match the existing language).",
      "requiredFlag": "optional_feature_flag_name" // or null if always enabled
    }
    ```
