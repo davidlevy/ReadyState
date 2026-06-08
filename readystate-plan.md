@@ -199,3 +199,19 @@ Tu construis "ReadyState", un bus d'état M2M (Machine-to-Machine) qui permet au
 
 5. **Validation :**
    Vérifie que le serveur TypeScript recompile correctement. Exécute le webhook ou le script de test pour confirmer que les annotations sont bien ingérées et retournées par les outils MCP.
+
+## <Task 13: Query Capability Status by Annotation>
+**Objectif :** Rendre l'outil `get_capability_status` plus intelligent en permettant de chercher une capacité via une annotation (ex: ticket Jira) plutôt que par son ID.
+
+1. **Mise à jour du schéma MCP :**
+   Dans `src/mcp.ts`, modifie `get_capability_status` pour :
+   - Rendre `capabilityId` optionnel.
+   - Ajouter `annotationKey` (string, optionnel) et `annotationValue` (string, optionnel).
+
+2. **Mise à jour du handler :**
+   - Si `capabilityId` est fourni, faire la recherche exacte (comportement existant).
+   - Si `annotationKey` et `annotationValue` sont fournis, utiliser Prisma `findFirst` avec `where: { annotations: { contains: '"' + annotationKey + '":"' + annotationValue + '"' } }` (ou en adaptant pour la recherche JSON SQLite).
+   - Gérer le cas où aucun critère n'est fourni (retourner une erreur).
+
+3. **Validation :**
+   Modifie `test-mcp.ts` pour tester un appel à `get_capability_status` en utilisant `annotationKey: "test/issue"` et `annotationValue: "123"` sur staging.

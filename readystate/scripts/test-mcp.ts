@@ -70,6 +70,17 @@ async function main() {
   });
   console.log("Upsert Result Production:", JSON.stringify(upsertResult2, null, 2));
 
+  console.log("\nCalling get_capability_status by annotation (test/issue: 123) on staging...");
+  const statusResult = await client.callTool({
+    name: "get_capability_status",
+    arguments: {
+      environment: "staging",
+      annotationKey: "test/issue",
+      annotationValue: "123"
+    }
+  });
+  console.log("Status Result by Annotation:", JSON.stringify(statusResult, null, 2));
+
   const { PrismaClient } = await import("@prisma/client");
   const prisma = new PrismaClient();
   const count = await prisma.capability.count();

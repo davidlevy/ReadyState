@@ -74,10 +74,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            capabilityId: { type: "string" },
             environment: { type: "string" },
+            capabilityId: { type: "string" },
+            annotationKey: { type: "string" },
+            annotationValue: { type: "string" },
           },
-          required: ["capabilityId", "environment"],
+          required: ["environment"],
         },
       },
       {
@@ -113,11 +115,29 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (request.params.name === "get_capability_status") {
-    const { capabilityId, environment } = request.params.arguments as { capabilityId: string; environment: string };
+    const { capabilityId, environment, annotationKey, annotationValue } = request.params.arguments as { capabilityId?: string; environment: string; annotationKey?: string; annotationValue?: string; };
 
-    const capability = await prisma.capability.findFirst({
-      where: { capabilityId, environmentName: environment },
-    });
+    let capability = null;
+
+    if (capabilityId) {
+      capability = await prisma.capability.findFirst({
+        where: { capabilityId, environmentName: environment },
+      });
+    } else if (annotationKey && annotationValue) {
+      // Find capability where annotations string contains the key and value.
+      // SQLite JSON functions aren't easily exposed in basic Prisma, so we do a contains search.
+      const searchString = `"${annotationKey}":"${annotationValue}"`;
+      capability = await prisma.capability.findFirst({
+        where: { 
+          environmentName: environment,
+          annotations: { contains: searchString }
+        },
+      });
+    } else {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: "Must provide either capabilityId OR (annotationKey and annotationValue)" }) }],
+      };
+    }
 
     if (!capability) {
       return {
