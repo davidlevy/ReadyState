@@ -19,7 +19,7 @@ async function main() {
   await client.connect(transport);
 
   console.log("Testing GitHub Webhook with HMAC signature...");
-  const payload = JSON.stringify({ state: "success", environment: "staging", sha: "def456_hmac_test" });
+  const payload = JSON.stringify({ state: "success", environment: "staging", sha: "def456_hmac_test", repository: { full_name: "davidlevy/ReadyState" } });
   const secret = process.env.READYSTATE_WRITE_TOKEN || "dummy_secret_if_not_set";
   const signature = `sha256=${crypto.createHmac('sha256', secret).update(payload).digest('hex')}`;
 
