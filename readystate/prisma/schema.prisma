@@ -18,7 +18,7 @@ model Environment {
 }
 
 model Capability {
-  id              String      @id
+  capabilityId    String
   description     String
   requiredFlag    String?
   environmentName String
@@ -27,4 +27,6 @@ model Capability {
   updatedAt       DateTime    @updatedAt
   createdBy       String      @default("unknown")
   updatedBy       String      @default("unknown")
+
+  @@id([capabilityId, environmentName])
 }

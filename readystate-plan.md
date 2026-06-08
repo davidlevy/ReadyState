@@ -154,3 +154,27 @@ Tu construis "ReadyState", un bus d'état M2M (Machine-to-Machine) qui permet au
 3. **Validation :**
    - Modifie `scripts/test-mcp.ts` pour envoyer un webhook avec un payload contenant un vrai `repository.full_name` et un SHA valide pointant vers un commit où le manifeste existe.
    - Vérifie dans la base de données que les capacités du manifeste ont bien été ajoutées.
+
+
+## <Task 11: Refactoring Critique (Clé Composite par Environnement)>
+**Objectif :** Modifier le modèle de base de données pour qu'une même capacité (feature) puisse exister simultanément sur plusieurs environnements avec des états et des métadonnées distincts.
+
+1. **Mise à jour du Schéma (Prisma) :**
+   Dans `schema.prisma`, modifie le modèle `Capability` pour utiliser une clé composite :
+   - Renomme le champ `id` en `capabilityId` (String). Retire l'attribut `@id`.
+   - Assure-toi que les champs `environmentName` (String) et les autres métadonnées sont présents.
+   - Ajoute cette directive exacte à la toute fin du modèle : `@@id([capabilityId, environmentName])`
+   - Exécute la commande `npx prisma db push` dans le terminal. *(Note pour l'agent : Si Prisma avertit d'une perte de données sur SQLite à cause du changement de clé primaire, accepte-la avec `--accept-data-loss` ou supprime le fichier dev.db, c'est un environnement de dev).*
+
+2. **Mise à jour Globale du Serveur MCP (`src/mcp.ts`) :**
+   Tu dois refactoriser toutes les requêtes Prisma du fichier pour utiliser la nouvelle structure :
+   - **Outil `upsert_capability` :** Modifie le `prisma.capability.upsert`. Le bloc `where` doit désormais utiliser l'identifiant composite : `where: { capabilityId_environmentName: { capabilityId, environmentName } }`. Mets à jour les blocs `create` et `update` pour utiliser `capabilityId` au lieu de `id`.
+   - **Outil `get_capability_status` :** Modifie le `findFirst` pour chercher explicitement avec `where: { capabilityId, environmentName }`.
+   - **Outil `list_recent_capabilities` :** Assure-toi que l'objet JSON retourné expose bien la propriété `"capabilityId"` et non plus `"id"`.
+
+3. **Validation Terminal (Le Test de Duplication Légale) :**
+   Dans ton script de test local :
+   - Fais un appel `upsert_capability` pour `capabilityId: "api-checkout-v3"` sur l'environnement `"staging"`.
+   - Fais un deuxième appel `upsert_capability` pour le MÊME `capabilityId: "api-checkout-v3"`, mais sur l'environnement `"production"`.
+   - Écris une requête Prisma brute pour compter le nombre de lignes dans la table `Capability`. Confirme dans la console qu'il y a exactement **deux lignes distinctes**.
+   - Demande l'autorisation de terminer la tâche.   

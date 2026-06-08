@@ -72,11 +72,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (request.params.name === "get_capability_status") {
     const { capabilityId, environment } = request.params.arguments as { capabilityId: string; environment: string };
 
-    const capability = await prisma.capability.findUnique({
-      where: { id: capabilityId },
+    const capability = await prisma.capability.findFirst({
+      where: { capabilityId, environmentName: environment },
     });
 
-    if (!capability || capability.environmentName !== environment) {
+    if (!capability) {
       return {
         content: [{ type: "text", text: JSON.stringify({ status: "not_deployed", reason: "Missing from the currently deployed SHA" }) }],
       };
@@ -112,15 +112,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { capabilityId, environment, description, requiredFlag, author } = request.params.arguments as { capabilityId: string; environment: string; description: string; requiredFlag?: string; author: string };
 
     const capability = await prisma.capability.upsert({
-      where: { id: capabilityId },
+      where: { capabilityId_environmentName: { capabilityId, environmentName: environment } },
       update: {
         description,
         requiredFlag: requiredFlag || null,
-        environmentName: environment,
         updatedBy: author,
       },
       create: {
-        id: capabilityId,
+        capabilityId,
         description,
         requiredFlag: requiredFlag || null,
         environmentName: environment,

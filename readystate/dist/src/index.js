@@ -41,17 +41,49 @@ app.post('/webhooks/github', async (c) => {
             update: { currentSha: String(sha) },
             create: { name: environment, currentSha: String(sha) },
         });
-        const capability = await prisma.capability.upsert({
-            where: { id: 'api-checkout-v2' },
-            update: { environmentName: environment },
-            create: {
-                id: 'api-checkout-v2',
-                description: 'Checkout V2 API',
-                requiredFlag: 'mixpanel_checkout_active',
-                environmentName: environment
+        const repoFullName = payload.repository?.full_name;
+        if (!repoFullName) {
+            console.warn('Webhook: Missing repository.full_name in payload, skipping manifest fetch.');
+            return c.json({ success: true, env, message: 'Environment saved but no repository found to fetch manifest.' }, 200);
+        }
+        const manifestUrl = `https://raw.githubusercontent.com/${repoFullName}/${sha}/readystate-manifest.json`;
+        console.log(`Fetching manifest from: ${manifestUrl}`);
+        let capabilitiesCount = 0;
+        try {
+            const response = await fetch(manifestUrl);
+            if (response.ok) {
+                const manifestText = await response.text();
+                const manifest = JSON.parse(manifestText);
+                if (manifest.capabilities && Array.isArray(manifest.capabilities)) {
+                    for (const cap of manifest.capabilities) {
+                        if (cap.id && cap.description !== undefined) {
+                            await prisma.capability.upsert({
+                                where: { id: cap.id },
+                                update: {
+                                    environmentName: environment,
+                                    description: cap.description,
+                                    requiredFlag: cap.requiredFlag || null
+                                },
+                                create: {
+                                    id: cap.id,
+                                    description: cap.description,
+                                    requiredFlag: cap.requiredFlag || null,
+                                    environmentName: environment
+                                }
+                            });
+                            capabilitiesCount++;
+                        }
+                    }
+                }
             }
-        });
-        return c.json({ success: true, env, capability }, 200);
+            else {
+                console.warn(`Manifest not found or error fetching (${response.status}) at ${manifestUrl}`);
+            }
+        }
+        catch (fetchErr) {
+            console.error('Error fetching manifest:', fetchErr);
+        }
+        return c.json({ success: true, env, capabilitiesInserted: capabilitiesCount }, 200);
     }
     catch (err) {
         console.error('Webhook Error:', err);

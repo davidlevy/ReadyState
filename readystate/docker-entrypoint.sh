@@ -15,4 +15,7 @@ if [ ! -f "/app/data/.env" ]; then
   echo "==========================================================="
 fi
 
+# Ensure database schema is up-to-date
+npx prisma db push --skip-generate
+
 exec "$@"
