@@ -58,3 +58,38 @@ Tu construis "ReadyState", un bus d'état M2M (Machine-to-Machine) qui permet au
 3. Règle critique : Assure-toi que la base de données SQLite est déclarée dans un chemin (ex: `/app/data/`) qui pourra être facilement monté comme volume persistant (EBS ou Fly.io Volume).
 4. Ajoute un `.dockerignore` propre.
 5. **Validation Finale :** Exécute `npm run build` et confirme qu'il n'y a aucune erreur de build TypeScript.
+
+## <Task 6: L'Outil de Découverte (List Recents)>
+**Objectif :** Permettre aux agents de l'IA de découvrir les dernières capacités enregistrées ou mises à jour.
+
+1. **Mise à jour du Schéma :** Dans `schema.prisma`, ajoute un champ `updatedAt` automatique sur le modèle `Capability` pour pouvoir trier par récence :
+   ```prisma
+   model Capability {
+     id              String   @id
+     description     String
+     requiredFlag    String?
+     environmentName String
+     environment     Environment @relation(fields: [environmentName], references: [name])
+     updatedAt       DateTime @updatedAt // <- À ajouter
+   }
+
+## <Task 7: Outil d'Écriture et de Mise à Jour (Upsert Capability)>
+**Objectif :** Permettre aux agents de déclarer une nouvelle capacité ou de mettre à jour une capacité existante directement via le protocole MCP.
+
+1. **Déclaration de l'Outil MCP :**
+   Dans `src/mcp.ts`, ajoute un nouvel outil nommé `upsert_capability` dans ton `ListToolsRequestSchema` :
+   ```json
+   {
+     "name": "upsert_capability",
+     "description": "Ajoute une nouvelle capacité ou met à jour une capacité existante sur un environnement spécifique (comportement d'upsert).",
+     "inputSchema": {
+       "type": "object",
+       "properties": {
+         "capabilityId": { "type": "string", "description": "L'ID unique de la capacité (ex: api-checkout-v3)" },
+         "environment": { "type": "string", "description": "L'environnement cible (ex: local, staging)" },
+         "description": { "type": "string", "description": "La description de ce que fait cette capacité" },
+         "requiredFlag": { "type": "string", "description": "Le nom du feature flag requis (optionnel)" }
+       },
+       "required": ["capabilityId", "environment", "description"]
+     }
+   }   
