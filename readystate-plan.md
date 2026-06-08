@@ -8,6 +8,9 @@ Tu construis "ReadyState", un bus d'état M2M (Machine-to-Machine) qui permet au
 - **Stack :** Node.js, TypeScript, Hono, Prisma (SQLite local), et `@modelcontextprotocol/sdk`.
 - **Règle d'exécution :** Tu es en mode Supervisé. Exécute chaque tâche l'une après l'autre. Utilise le terminal intégré pour effectuer les validations de fin d'étape. Affiche les résultats dans la console et **attends mon approbation explicite** avant de passer à la tâche suivante.
 
+## Règles d'Exploitation
+- **Rechargement MCP :** L'éditeur lance le serveur MCP en tâche de fond. **RÈGLE CRITIQUE :** Chaque fois que tu modifies le code source de l'intégration MCP (`src/mcp.ts`, modifications Prisma, etc.) et que tu le recompiles, tu DOIS demander à l'utilisateur de "Reload Window" (recharger sa fenêtre) dans son éditeur. Sinon, les outils MCP continueront de tourner sur l'ancienne version du code !
+
 ---
 
 ## <Task 1: Fondations & Base de données>
