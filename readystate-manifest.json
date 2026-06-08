@@ -1,0 +1,19 @@
+{
+  "capabilities": [
+    {
+      "id": "core-webhook-ingestion",
+      "description": "Ingestion des webhooks de déploiement GitHub et synchronisation SQLite",
+      "requiredFlag": null
+    },
+    {
+      "id": "mcp-agent-interface",
+      "description": "Interface serveur MCP pour les agents IA avec auth tokens",
+      "requiredFlag": "mcp_enabled"
+    },
+    {
+      "id": "dynamic-manifest-parser",
+      "description": "Parseur dynamique du readystate-manifest.json",
+      "requiredFlag": null
+    }
+  ]
+}

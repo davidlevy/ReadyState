@@ -136,3 +136,21 @@ Tu construis "ReadyState", un bus d'état M2M (Machine-to-Machine) qui permet au
 
 3. **Mise à jour du script de test :**
    Dans `scripts/test-mcp.ts`, ajoute l'envoi d'une requête HTTP vers le webhook avec la signature HMAC correcte pour vérifier que l'API Hono est bien protégée.
+
+## <Task 10: Ingestion Dynamique via Manifeste>
+**Objectif :** Remplacer le "Mock MVP" de l'ingestion par la lecture dynamique d'un manifeste de capacités depuis le dépôt GitHub source.
+
+1. **Création du manifeste (Dogfooding) :**
+   - Crée un fichier `readystate-manifest.json` à la racine du dépôt GitHub.
+   - Ce fichier contiendra un objet JSON avec une clé `capabilities` (un tableau d'objets `id`, `description`, `requiredFlag`).
+
+2. **Modification du Webhook (Hono) :**
+   - Dans `src/index.ts`, modifie la route `POST /webhooks/github`.
+   - Extrait `repository.full_name` depuis le payload de l'événement.
+   - Effectue une requête HTTP (via `fetch`) vers `https://raw.githubusercontent.com/${repository.full_name}/${sha}/readystate-manifest.json`.
+   - Si le fichier existe (HTTP 200), parse le JSON et utilise `prisma.capability.upsert` dans une boucle pour enregistrer toutes les capacités dans SQLite.
+   - S'il n'existe pas (HTTP 404), continue silencieusement (tous les dépôts n'ont pas forcément un manifeste).
+
+3. **Validation :**
+   - Modifie `scripts/test-mcp.ts` pour envoyer un webhook avec un payload contenant un vrai `repository.full_name` et un SHA valide pointant vers un commit où le manifeste existe.
+   - Vérifie dans la base de données que les capacités du manifeste ont bien été ajoutées.
