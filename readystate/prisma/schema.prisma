@@ -23,5 +23,8 @@ model Capability {
   requiredFlag    String?
   environmentName String
   environment     Environment @relation(fields: [environmentName], references: [name])
-  updatedAt       DateTime    @updatedAt @default(now())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  createdBy       String      @default("unknown")
+  updatedBy       String      @default("unknown")
 }

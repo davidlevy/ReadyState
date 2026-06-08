@@ -73,23 +73,66 @@ Tu construis "ReadyState", un bus d'état M2M (Machine-to-Machine) qui permet au
      updatedAt       DateTime @updatedAt // <- À ajouter
    }
 
-## <Task 7: Outil d'Écriture et de Mise à Jour (Upsert Capability)>
-**Objectif :** Permettre aux agents de déclarer une nouvelle capacité ou de mettre à jour une capacité existante directement via le protocole MCP.
+## <Task 7: Outil d'Écriture avec Traçabilité (Upsert Capability)>
+**Objectif :** Permettre aux agents de déclarer ou mettre à jour une capacité, en signant leur action pour l'historique d'audit.
 
-1. **Déclaration de l'Outil MCP :**
-   Dans `src/mcp.ts`, ajoute un nouvel outil nommé `upsert_capability` dans ton `ListToolsRequestSchema` :
+1. **Mise à jour du Schéma :**
+   Dans `schema.prisma`, ajoute `createdBy` (String) et `updatedBy` (String) et `createdAt` (DateTime) et `updatedAt` (DateTime) au modèle `Capability`. Exécute `npx prisma db push`.
+
+2. **Déclaration de l'Outil MCP :**
+   Dans `src/mcp.ts`, ajoute l'outil `upsert_capability` :
    ```json
    {
      "name": "upsert_capability",
-     "description": "Ajoute une nouvelle capacité ou met à jour une capacité existante sur un environnement spécifique (comportement d'upsert).",
+     "description": "Ajoute ou met à jour une capacité. L'agent DOIT fournir son identifiant dans le champ author.",
      "inputSchema": {
        "type": "object",
        "properties": {
-         "capabilityId": { "type": "string", "description": "L'ID unique de la capacité (ex: api-checkout-v3)" },
-         "environment": { "type": "string", "description": "L'environnement cible (ex: local, staging)" },
-         "description": { "type": "string", "description": "La description de ce que fait cette capacité" },
-         "requiredFlag": { "type": "string", "description": "Le nom du feature flag requis (optionnel)" }
+         "capabilityId": { "type": "string" },
+         "environment": { "type": "string" },
+         "description": { "type": "string" },
+         "requiredFlag": { "type": "string" },
+         "author": { "type": "string", "description": "Identifiant de l'agent ou de l'utilisateur effectuant l'action." }
        },
-       "required": ["capabilityId", "environment", "description"]
+       "required": ["capabilityId", "environment", "description", "author"]
      }
-   }   
+   }
+
+
+## <Task 8: L'Initialisation "Magique" (Auto-génération des Tokens)>
+**Objectif :** Automatiser la création sécurisée des tokens `READ` et `WRITE` au premier lancement du conteneur Docker, sans exiger de configuration manuelle complexe de la part de l'utilisateur.
+
+1. **Préparation de l'Environnement :**
+   - Installe le package `dotenv` (`npm install dotenv`).
+   - Au tout début de `src/index.ts` et `src/mcp.ts`, ajoute la configuration pour forcer la lecture des variables d'environnement depuis le volume persistant : `require('dotenv').config({ path: '/app/data/.env' });` (ou l'équivalent ES Modules).
+
+2. **Le Script d'Entrypoint (Shell) :**
+   Crée un fichier `docker-entrypoint.sh` à la racine du projet. 
+   Implémente cette logique stricte en bash :
+   - Vérifie si le fichier `/app/data/.env` existe.
+   - S'il n'existe pas : 
+     a. Génère un token de lecture via Node : `READ_TOKEN="rs_read_$(node -e "console.log(require('crypto').randomBytes(16).toString('hex'))")"`
+     b. Génère un token d'écriture : `WRITE_TOKEN="rs_write_$(node -e "console.log(require('crypto').randomBytes(16).toString('hex'))")"`
+     c. Crée le fichier `/app/data/.env` et écris ces deux variables à l'intérieur (`READYSTATE_READ_TOKEN` et `READYSTATE_WRITE_TOKEN`).
+     d. Affiche un bloc d'alerte TRÈS VISIBLE dans la console (avec `echo`) pour avertir l'utilisateur qu'il s'agit du premier lancement et qu'il doit copier ces tokens pour ses agents.
+   - S'il existe : passe silencieusement cette étape.
+   - À la toute fin du script, transfère l'exécution à Node en ajoutant : `exec "$@"`
+
+3. **Mise à jour du Dockerfile :**
+   Modifie ton `Dockerfile` (créé à la Tâche 5) pour intégrer cette mécanique :
+   - Ajoute : `COPY docker-entrypoint.sh /usr/local/bin/`
+   - Rends-le exécutable : `RUN chmod +x /usr/local/bin/docker-entrypoint.sh`
+   - Déclare-le comme point d'entrée principal : `ENTRYPOINT ["docker-entrypoint.sh"]` et `CMD ["npm", "start"]`.
+
+## <Task 9: Sécurisation des Accès (Vérification des Tokens)>
+**Objectif :** Valider les tokens générés pour protéger les routes et les actions.
+
+1. **Sécurisation du Webhook (Hono) :**
+   Dans `src/index.ts`, ajoute une vérification dans la route `/webhooks/github`.
+   Vérifie que le header `x-hub-signature-256` correspond au HMAC SHA-256 du payload signé avec le `READYSTATE_WRITE_TOKEN`. (Si absent ou invalide, retourne une erreur 401).
+
+2. **Sécurisation du MCP :**
+   Dans `src/mcp.ts`, ajoute une vérification au démarrage : si `process.env.READYSTATE_READ_TOKEN` ou `process.env.READYSTATE_WRITE_TOKEN` sont absents, le processus doit se terminer avec une erreur (process.exit(1)).
+
+3. **Mise à jour du script de test :**
+   Dans `scripts/test-mcp.ts`, ajoute l'envoi d'une requête HTTP vers le webhook avec la signature HMAC correcte pour vérifier que l'API Hono est bien protégée.

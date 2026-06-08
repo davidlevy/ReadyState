@@ -32,8 +32,12 @@ RUN mkdir -p /app/data && chown -R node:node /app/data
 # Use a default DATABASE_URL for sqlite
 ENV DATABASE_URL="file:/app/data/dev.db"
 
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 EXPOSE 3000
 
 USER node
 
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["npm", "start"]

@@ -1,3 +1,11 @@
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '/app/data/.env' });
+
+if (!process.env.READYSTATE_READ_TOKEN || !process.env.READYSTATE_WRITE_TOKEN) {
+  console.error("FATAL: READYSTATE_READ_TOKEN and READYSTATE_WRITE_TOKEN must be set in environment.");
+  process.exit(1);
+}
+
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -32,27 +40,28 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         "name": "list_recent_capabilities",
-        "description": "Expose les dernières capacités modifiées ou déployées sur le système, triées par ordre chronologique inverse.",
+        "description": "Exposes the latest modified capabilities. STRICT DIRECTIVE FOR THE AI: Never return raw JSON to the user. Always format the results as a clear Markdown table, with columns: ID, Description, Feature Flag, Author, and Date (human-readable format).",
         "inputSchema": {
           "type": "object",
           "properties": {
-            "limit": { "type": "integer", "description": "Nombre maximum de résultats à retourner (par défaut 10)" },
-            "environment": { "type": "string", "description": "Filtrer par environnement spécifique (optionnel)" }
+            "limit": { "type": "integer", "description": "Maximum number of results to return (default 10)" },
+            "environment": { "type": "string", "description": "Filter by specific environment (optional)" }
           }
         }
       },
       {
         name: "upsert_capability",
-        description: "Ajoute une nouvelle capacité ou met à jour une capacité existante sur un environnement spécifique (comportement d'upsert).",
+        description: "Adds or updates a capability. The agent MUST provide its identifier in the author field.",
         inputSchema: {
           type: "object",
           properties: {
-            capabilityId: { type: "string", description: "L'ID unique de la capacité (ex: api-checkout-v3)" },
-            environment: { type: "string", description: "L'environnement cible (ex: local, staging)" },
-            description: { type: "string", description: "La description de ce que fait cette capacité" },
-            requiredFlag: { type: "string", description: "Le nom du feature flag requis (optionnel)" }
+            capabilityId: { type: "string" },
+            environment: { type: "string" },
+            description: { type: "string" },
+            requiredFlag: { type: "string" },
+            author: { type: "string", description: "Identifier of the agent or user performing the action." }
           },
-          required: ["capabilityId", "environment", "description"]
+          required: ["capabilityId", "environment", "description", "author"]
         }
       }
     ],
@@ -69,7 +78,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     if (!capability || capability.environmentName !== environment) {
       return {
-        content: [{ type: "text", text: JSON.stringify({ status: "not_deployed", reason: "Absent du SHA actuel déployé" }) }],
+        content: [{ type: "text", text: JSON.stringify({ status: "not_deployed", reason: "Missing from the currently deployed SHA" }) }],
       };
     }
 
@@ -77,13 +86,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const isActive = await isFlagActive(capability.requiredFlag, environment);
       if (!isActive) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ status: "deployed_but_inactive", reason: "Le code est présent mais le feature flag est désactivé" }) }],
+          content: [{ type: "text", text: JSON.stringify({ status: "deployed_but_inactive", reason: "The code is present but the feature flag is disabled" }) }],
         };
       }
     }
 
     return {
-      content: [{ type: "text", text: JSON.stringify({ status: "fully_released", reason: "Code déployé et flag actif. Prêt à l'usage." }) }],
+      content: [{ type: "text", text: JSON.stringify({ status: "fully_released", reason: "Code deployed and flag active. Ready for use." }) }],
     };
   } else if (request.params.name === "list_recent_capabilities") {
     const args = request.params.arguments || {};
@@ -100,7 +109,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       content: [{ type: "text", text: JSON.stringify(capabilities) }],
     };
   } else if (request.params.name === "upsert_capability") {
-    const { capabilityId, environment, description, requiredFlag } = request.params.arguments as { capabilityId: string; environment: string; description: string; requiredFlag?: string };
+    const { capabilityId, environment, description, requiredFlag, author } = request.params.arguments as { capabilityId: string; environment: string; description: string; requiredFlag?: string; author: string };
 
     const capability = await prisma.capability.upsert({
       where: { id: capabilityId },
@@ -108,12 +117,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         description,
         requiredFlag: requiredFlag || null,
         environmentName: environment,
+        updatedBy: author,
       },
       create: {
         id: capabilityId,
         description,
         requiredFlag: requiredFlag || null,
         environmentName: environment,
+        createdBy: author,
+        updatedBy: author,
       },
     });
 
