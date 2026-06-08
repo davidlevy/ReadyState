@@ -6,6 +6,7 @@ import * as crypto from 'crypto';
 import YAML from 'yaml';
 const app = new Hono();
 import { PrismaClient } from '@prisma/client';
+import { normalizeEnvironment } from './utils/envMapper.js';
 const prisma = new PrismaClient();
 app.get('/', (c) => {
     return c.text('Hello Hono!');
@@ -29,7 +30,8 @@ app.post('/webhooks/github', async (c) => {
         }
         const payload = JSON.parse(bodyText);
         const state = payload.deployment_status?.state || payload.state;
-        const environment = payload.deployment?.environment || payload.environment;
+        const rawEnvironment = payload.deployment?.environment || payload.environment;
+        const environment = normalizeEnvironment(rawEnvironment);
         const sha = payload.deployment?.sha || payload.sha;
         if (state !== 'success') {
             return c.json({ message: 'Ignored, state is not success' }, 200);

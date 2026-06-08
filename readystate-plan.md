@@ -218,3 +218,16 @@ Tu construis "ReadyState", un bus d'état M2M (Machine-to-Machine) qui permet au
 
 3. **Validation :**
    Modifie `test-mcp.ts` pour tester un appel à `get_capability_status` en utilisant `annotationKey: "test/issue"` et `annotationValue: "123"` sur staging.
+
+## <Task 14: Gestion des Environnements (Alias & Normalisation)>
+**Objectif :** Résoudre le problème d'alias implicites en normalisant systématiquement les noms d'environnements (ex: `prod` -> `production`).
+
+1. **Création d'un utilitaire de normalisation :**
+   - Crée `src/utils/envMapper.ts`.
+   - Implémente une fonction `normalizeEnvironment(env: string): string` qui gère des alias complets (avec fallback sur l'entrée d'origine) et qui peut lire la variable d'environnement `ENV_ALIASES` si elle existe.
+2. **Mise à jour de l'API MCP :**
+   - Modifie `src/mcp.ts` pour passer toutes les chaînes `environment` entrantes dans `normalizeEnvironment`.
+3. **Mise à jour du Webhook :**
+   - Modifie `src/index.ts` pour s'assurer que le champ `environment` récupéré de GitHub est également normalisé.
+4. **Validation :**
+   - Teste l'outil `get_capability_status` avec l'environnement `prod` et confirme qu'il retourne bien les données de `production`.

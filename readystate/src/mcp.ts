@@ -58,6 +58,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { PrismaClient } from "@prisma/client";
 import { isFlagActive } from "./services/flagService.js";
+import { normalizeEnvironment } from "./utils/envMapper.js";
 
 const prisma = new PrismaClient();
 const server = new Server(
@@ -115,7 +116,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (request.params.name === "get_capability_status") {
-    const { capabilityId, environment, annotationKey, annotationValue } = request.params.arguments as { capabilityId?: string; environment: string; annotationKey?: string; annotationValue?: string; };
+    const args = request.params.arguments as { capabilityId?: string; environment: string; annotationKey?: string; annotationValue?: string; };
+    const capabilityId = args.capabilityId;
+    const environment = normalizeEnvironment(args.environment);
+    const annotationKey = args.annotationKey;
+    const annotationValue = args.annotationValue;
 
     let capability = null;
 
@@ -165,7 +170,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   } else if (request.params.name === "list_recent_capabilities") {
     const args = request.params.arguments || {};
     const limit = typeof args.limit === "number" ? args.limit : 10;
-    const environment = typeof args.environment === "string" ? args.environment : undefined;
+    const environment = typeof args.environment === "string" ? normalizeEnvironment(args.environment) : undefined;
 
     const capabilities = await prisma.capability.findMany({
       where: environment ? { environmentName: environment } : undefined,
@@ -185,7 +190,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       content: [{ type: "text", text: JSON.stringify(formattedCapabilities) }],
     };
   } else if (request.params.name === "upsert_capability") {
-    const { capabilityId, environment, description, requiredFlag, annotations, author } = request.params.arguments as { capabilityId: string; environment: string; description: string; requiredFlag?: string; annotations?: Record<string, string>; author: string };
+    const args = request.params.arguments as { capabilityId: string; environment: string; description: string; requiredFlag?: string; annotations?: Record<string, string>; author: string };
+    const capabilityId = args.capabilityId;
+    const environment = normalizeEnvironment(args.environment);
+    const description = args.description;
+    const requiredFlag = args.requiredFlag;
+    const annotations = args.annotations;
+    const author = args.author;
 
     const annotationsStr = annotations ? JSON.stringify(annotations) : null;
 
