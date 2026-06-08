@@ -28,7 +28,8 @@ async function main() {
     arguments: { limit: 10 }
   });
 
-  console.log(result.content[0].text);
+  const content: any = result.content;
+  console.log(content[0].text);
   process.exit(0);
 }
 
