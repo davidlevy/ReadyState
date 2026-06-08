@@ -178,3 +178,24 @@ Tu construis "ReadyState", un bus d'état M2M (Machine-to-Machine) qui permet au
    - Fais un deuxième appel `upsert_capability` pour le MÊME `capabilityId: "api-checkout-v3"`, mais sur l'environnement `"production"`.
    - Écris une requête Prisma brute pour compter le nombre de lignes dans la table `Capability`. Confirme dans la console qu'il y a exactement **deux lignes distinctes**.
    - Demande l'autorisation de terminer la tâche.   
+
+## <Task 12: External References & YAML Migration>
+**Objectif :** Supporter les identifiants externes (ex: Linear, Jira) via un champ `annotations` et migrer le format du manifeste de JSON vers YAML.
+
+1. **Mise à jour du Schéma (Prisma) :**
+   Dans `schema.prisma`, ajoute le champ `annotations` (String, nullable) au modèle `Capability`. Exécute la migration (`npx prisma migrate dev --name add_annotations`) et regénère le client Prisma.
+
+2. **Migration vers YAML :**
+   - Installe le package `yaml` (`npm install yaml`).
+   - Renomme `readystate-manifest.json` en `readystate-manifest.yml` et convertis son contenu en YAML. Ajoute un exemple d'annotation (ex: `linear.app/issue: LIN-123`).
+
+3. **Mise à jour de l'Ingestion (Webhook) :**
+   Dans `src/index.ts`, modifie la route webhook pour récupérer le fichier `.yml` au lieu de `.json`. Utilise `YAML.parse()` au lieu de `JSON.parse()`. Stringifie l'objet `annotations` (s'il existe) avant de faire le `prisma.capability.upsert`.
+
+4. **Mise à jour du Serveur MCP :**
+   Dans `src/mcp.ts` :
+   - Mets à jour `upsert_capability` pour accepter un objet `annotations` (Record<string, string>). Stringifie-le avant l'insertion en base.
+   - Modifie `list_recent_capabilities` et `get_capability_status` pour parser la chaîne `annotations` retournée par la base de données (via `JSON.parse`) avant de l'envoyer dans la réponse MCP.
+
+5. **Validation :**
+   Vérifie que le serveur TypeScript recompile correctement. Exécute le webhook ou le script de test pour confirmer que les annotations sont bien ingérées et retournées par les outils MCP.

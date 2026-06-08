@@ -21,6 +21,7 @@ model Capability {
   capabilityId    String
   description     String
   requiredFlag    String?
+  annotations     String?
   environmentName String
   environment     Environment @relation(fields: [environmentName], references: [name])
   createdAt       DateTime    @default(now())

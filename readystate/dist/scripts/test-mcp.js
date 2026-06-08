@@ -2,7 +2,11 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import * as crypto from "crypto";
 import * as dotenv from "dotenv";
+import * as path from "path";
+import { fileURLToPath } from "url";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config();
+dotenv.config({ path: path.join(__dirname, "../data/.env"), override: true });
 async function main() {
     const transport = new StdioClientTransport({
         command: "npx",
@@ -11,7 +15,7 @@ async function main() {
     const client = new Client({ name: "test-client", version: "1.0.0" }, { capabilities: {} });
     await client.connect(transport);
     console.log("Testing GitHub Webhook with HMAC signature...");
-    const payload = JSON.stringify({ state: "success", environment: "staging", sha: "def456_hmac_test", repository: { full_name: "davidlevy/ReadyState" } });
+    const payload = JSON.stringify({ state: "success", environment: "staging", sha: "df3a1f4d42ef81e1a4072354dc6e1b44ed449f71", repository: { full_name: "davidlevy/ReadyState" } });
     const secret = process.env.READYSTATE_WRITE_TOKEN || "dummy_secret_if_not_set";
     const signature = `sha256=${crypto.createHmac('sha256', secret).update(payload).digest('hex')}`;
     try {
@@ -36,6 +40,7 @@ async function main() {
             environment: "staging",
             description: "Test description for v3",
             requiredFlag: "test_flag_v3",
+            annotations: { "test/issue": "123" },
             author: "agent_test_runner"
         }
     });
@@ -48,6 +53,7 @@ async function main() {
             environment: "production",
             description: "Test description for v3",
             requiredFlag: "test_flag_v3",
+            annotations: { "test/issue": "456" },
             author: "agent_test_runner"
         }
     });

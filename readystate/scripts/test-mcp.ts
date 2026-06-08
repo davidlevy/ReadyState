@@ -50,6 +50,7 @@ async function main() {
       environment: "staging",
       description: "Test description for v3",
       requiredFlag: "test_flag_v3",
+      annotations: { "test/issue": "123" },
       author: "agent_test_runner"
     }
   });
@@ -63,6 +64,7 @@ async function main() {
       environment: "production",
       description: "Test description for v3",
       requiredFlag: "test_flag_v3",
+      annotations: { "test/issue": "456" },
       author: "agent_test_runner"
     }
   });

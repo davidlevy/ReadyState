@@ -101,6 +101,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             environment: { type: "string" },
             description: { type: "string" },
             requiredFlag: { type: "string" },
+            annotations: { type: "object", additionalProperties: { type: "string" } },
             author: { type: "string", description: "Identifier of the agent or user performing the action." }
           },
           required: ["capabilityId", "environment", "description", "author"]
@@ -133,8 +134,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
     }
 
+    let parsedAnnotations = null;
+    if (capability.annotations) {
+      try { parsedAnnotations = JSON.parse(capability.annotations); } catch (e) {}
+    }
+
     return {
-      content: [{ type: "text", text: JSON.stringify({ status: "fully_released", reason: "Code deployed and flag active. Ready for use." }) }],
+      content: [{ type: "text", text: JSON.stringify({ status: "fully_released", reason: "Code deployed and flag active. Ready for use.", annotations: parsedAnnotations }) }],
     };
   } else if (request.params.name === "list_recent_capabilities") {
     const args = request.params.arguments || {};
@@ -147,23 +153,35 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       take: limit,
     });
 
+    const formattedCapabilities = capabilities.map(cap => {
+      let parsedAnnotations = null;
+      if (cap.annotations) {
+        try { parsedAnnotations = JSON.parse(cap.annotations); } catch (e) {}
+      }
+      return { ...cap, annotations: parsedAnnotations };
+    });
+
     return {
-      content: [{ type: "text", text: JSON.stringify(capabilities) }],
+      content: [{ type: "text", text: JSON.stringify(formattedCapabilities) }],
     };
   } else if (request.params.name === "upsert_capability") {
-    const { capabilityId, environment, description, requiredFlag, author } = request.params.arguments as { capabilityId: string; environment: string; description: string; requiredFlag?: string; author: string };
+    const { capabilityId, environment, description, requiredFlag, annotations, author } = request.params.arguments as { capabilityId: string; environment: string; description: string; requiredFlag?: string; annotations?: Record<string, string>; author: string };
+
+    const annotationsStr = annotations ? JSON.stringify(annotations) : null;
 
     const capability = await prisma.capability.upsert({
       where: { capabilityId_environmentName: { capabilityId, environmentName: environment } },
       update: {
         description,
         requiredFlag: requiredFlag || null,
+        annotations: annotationsStr,
         updatedBy: author,
       },
       create: {
         capabilityId,
         description,
         requiredFlag: requiredFlag || null,
+        annotations: annotationsStr,
         environmentName: environment,
         createdBy: author,
         updatedBy: author,

@@ -3,6 +3,7 @@ dotenv.config({ path: '/app/data/.env' });
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import * as crypto from 'crypto';
+import YAML from 'yaml';
 const app = new Hono();
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
@@ -46,27 +47,30 @@ app.post('/webhooks/github', async (c) => {
             console.warn('Webhook: Missing repository.full_name in payload, skipping manifest fetch.');
             return c.json({ success: true, env, message: 'Environment saved but no repository found to fetch manifest.' }, 200);
         }
-        const manifestUrl = `https://raw.githubusercontent.com/${repoFullName}/${sha}/readystate-manifest.json`;
+        const manifestUrl = `https://raw.githubusercontent.com/${repoFullName}/${sha}/readystate-manifest.yml`;
         console.log(`Fetching manifest from: ${manifestUrl}`);
         let capabilitiesCount = 0;
         try {
             const response = await fetch(manifestUrl);
             if (response.ok) {
                 const manifestText = await response.text();
-                const manifest = JSON.parse(manifestText);
+                const manifest = YAML.parse(manifestText);
                 if (manifest.capabilities && Array.isArray(manifest.capabilities)) {
                     for (const cap of manifest.capabilities) {
                         if (cap.id && cap.description !== undefined) {
+                            const annotationsStr = cap.annotations ? JSON.stringify(cap.annotations) : null;
                             await prisma.capability.upsert({
                                 where: { capabilityId_environmentName: { capabilityId: cap.id, environmentName: environment } },
                                 update: {
                                     description: cap.description,
-                                    requiredFlag: cap.requiredFlag || null
+                                    requiredFlag: cap.requiredFlag || null,
+                                    annotations: annotationsStr
                                 },
                                 create: {
                                     capabilityId: cap.id,
                                     description: cap.description,
                                     requiredFlag: cap.requiredFlag || null,
+                                    annotations: annotationsStr,
                                     environmentName: environment
                                 }
                             });
