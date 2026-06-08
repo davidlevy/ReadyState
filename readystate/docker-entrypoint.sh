@@ -7,15 +7,15 @@ if [ ! -f "/app/data/.env" ]; then
   echo "READYSTATE_READ_TOKEN=$READ_TOKEN" > /app/data/.env
   echo "READYSTATE_WRITE_TOKEN=$WRITE_TOKEN" >> /app/data/.env
   
-  echo "==========================================================="
-  echo "⚠️ FIRST LAUNCH: READYSTATE TOKENS GENERATED ⚠️"
-  echo "Please save these tokens to configure your AI agents:"
-  echo "READ TOKEN:  $READ_TOKEN"
-  echo "WRITE TOKEN: $WRITE_TOKEN"
-  echo "==========================================================="
+  echo "===========================================================" >&2
+  echo "FIRST LAUNCH: READYSTATE TOKENS GENERATED" >&2
+  echo "Please save these tokens to configure your AI agents:" >&2
+  echo "READ TOKEN:  $READ_TOKEN" >&2
+  echo "WRITE TOKEN: $WRITE_TOKEN" >&2
+  echo "===========================================================" >&2
 fi
 
 # Ensure database schema is up-to-date
-npx prisma db push --skip-generate
+npx prisma db push --skip-generate > /dev/null 2>&1
 
 exec "$@"

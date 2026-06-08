@@ -1,5 +1,8 @@
 import * as dotenv from 'dotenv';
+const originalLog = console.log;
+console.log = () => {};
 dotenv.config({ path: '/app/data/.env' });
+console.log = originalLog;
 
 if (!process.env.READYSTATE_READ_TOKEN || !process.env.READYSTATE_WRITE_TOKEN) {
   console.error("FATAL: READYSTATE_READ_TOKEN and READYSTATE_WRITE_TOKEN must be set in environment.");
