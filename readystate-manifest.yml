@@ -17,3 +17,15 @@ capabilities:
     description: Outil MCP permettant aux agents d'ajouter ou de mettre à jour dynamiquement des capacités
   - id: mcp-get-capability-status
     description: Outil MCP permettant de lire le statut de déploiement et les flags d'une capacité, supporte la recherche par annotation
+  - id: universal-push-api
+    description: Route POST /api/sync agnostique permettant à n'importe quelle CI (GitLab, GitHub, Jenkins) de pousser un manifeste déclaratif entier.
+    annotations:
+      local/docs: "dir:./docs/architecture/decisions/2026-06-09-universal-sync-api-and-monorepo.md"
+  - id: declarative-garbage-collection
+    description: Système de nettoyage automatique supprimant de la base SQLite les capacités qui ne sont plus présentes dans le manifeste poussé.
+    annotations:
+      local/docs: "dir:./docs/architecture/decisions/2026-06-09-universal-sync-api-and-monorepo.md"
+  - id: monorepo-namespace-isolation
+    description: Séparation stricte des capacités par 'component' et 'componentType' pour supporter les environnements monorepos.
+    annotations:
+      local/docs: "dir:./docs/architecture/decisions/2026-06-09-universal-sync-api-and-monorepo.md"

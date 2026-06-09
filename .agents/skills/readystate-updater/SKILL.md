@@ -17,13 +17,21 @@ description: Ensures that the readystate-manifest.yml file is always kept in syn
 3. The format of the `readystate-manifest.yml` file must include a top-level `component` string and a `capabilities` list:
    ```yaml
    component: my-service-name
+   componentType: api
    capabilities:
    - id: kebab-case-name-of-the-feature
      description: A clear, concise description of what the feature does (in English or match the existing language).
      requiredFlag: optional_feature_flag_name # Omit this line completely if there is no flag
-     annotations: # Optional but recommended: link to external tickets
-       jira.com/ticket: PROJ-123
-       linear.app/issue: LIN-123
+     annotations: # REQUIRED: Use domain namespaces for external references, and local/ for repository files
+       # Examples of valid namespaces:
+       local/contract: "dir:./docs/api.yaml"
+       local/docs: "dir:./docs/architecture.md"
+       linear.app/issue: "LIN-123"
+       jira.com/ticket: "PROJ-456"
+       github.com/pull-request: "42"
+       gitlab.com/merge-request: "99"
+       pagerduty.com/incident: "PD1234"
+       sentry.io/issue: "SEN-42"
    ```
 4. Only append to the `capabilities` list in the YAML file. Ensure the file remains valid YAML.
 5. If the user mentions a specific ticket (e.g. Jira or Linear) in their initial request, YOU MUST include it in the `annotations` block using the format shown above.
