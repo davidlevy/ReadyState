@@ -222,6 +222,33 @@ app.post('/api/sync', async (c) => {
   }
 })
 
+app.get('/health', async (c) => {
+  try {
+    // Simple query to verify DB is alive
+    await prisma.$queryRaw`SELECT 1`
+    return c.json({ status: 'ok', message: 'ReadyState is healthy' }, 200)
+  } catch (err) {
+    console.error('Health check failed:', err)
+    return c.json({ status: 'error', message: 'Database connection failed' }, 503)
+  }
+})
+
+app.get('/metrics', async (c) => {
+  try {
+    const envCount = await prisma.environment.count()
+    const capCount = await prisma.capability.count()
+    
+    return c.json({
+      environments: envCount,
+      capabilities: capCount,
+      uptimeSeconds: Math.floor(process.uptime())
+    }, 200)
+  } catch (err) {
+    console.error('Metrics failed:', err)
+    return c.json({ error: 'Failed to fetch metrics' }, 500)
+  }
+})
+
 serve({
   fetch: app.fetch,
   port: Number(process.env.PORT) || 3000
