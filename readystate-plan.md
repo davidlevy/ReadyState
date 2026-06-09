@@ -244,3 +244,21 @@ Tu construis "ReadyState", un bus d'état M2M (Machine-to-Machine) qui permet au
    - Modifie `get_capability_status` et `list_recent_capabilities` pour accepter `component` comme filtre optionnel.
 3. **Mise à jour du Manifeste :**
    - Ajoute `component: "nom-du-composant"` dans `readystate-manifest.yml`.
+
+## <Task 16: API de Synchronisation Universelle (Push CI) & Garbage Collection>
+**Objectif :** Remplacer la dépendance au webhook GitHub par une API universelle `POST /api/sync` adaptée aux monorepos, et implémenter le "Garbage Collection" (suppression des capacités retirées du code).
+
+1. **Mise à jour du Schéma (Prisma) :**
+   - Dans `schema.prisma`, ajoute un champ `componentType String?` au modèle `Capability`.
+   - Exécute `npx prisma db push --accept-data-loss`.
+2. **Création de l'API Push (`src/index.ts`) :**
+   - Crée une route `POST /api/sync`.
+   - Sécurisation : Vérifie le header `Authorization: Bearer <WRITE_TOKEN>`.
+   - Entrées : Headers `x-environment` et `x-commit-sha`, body = fichier YAML brut.
+   - Parsing : Lit `component` et `componentType` à la racine du YAML.
+   - Synchro : Fait un `upsert` de toutes les capacités.
+   - Garbage Collection : Fait un `deleteMany` pour supprimer les capacités de la base (pour ce composant + environnement) qui ne sont plus dans le YAML reçu.
+3. **Mise à jour du Serveur MCP (`src/mcp.ts`) :**
+   - Ajoute le support du filtre optionnel `componentType` dans `list_recent_capabilities`.
+4. **Validation :**
+   - Crée un script `scripts/test-sync.ts` simulant une CI qui envoie le manifeste via `curl/fetch` vers l'API.

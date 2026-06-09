@@ -92,7 +92,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           "properties": {
             "limit": { "type": "integer", "description": "Maximum number of results to return (default 10)" },
             "environment": { "type": "string", "description": "Filter by specific environment (optional)" },
-            "component": { "type": "string", "description": "Filter by specific component (optional)" }
+            "component": { "type": "string", "description": "Filter by specific component (optional)" },
+            "componentType": { "type": "string", "description": "Filter by specific component type (optional)" }
           }
         }
       },
@@ -181,11 +182,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const limit = typeof args.limit === "number" ? args.limit : 10;
     const environment = typeof args.environment === "string" ? normalizeEnvironment(args.environment) : undefined;
     const component = typeof args.component === "string" ? args.component : undefined;
+    const componentType = typeof args.componentType === "string" ? args.componentType : undefined;
 
     const capabilities = await prisma.capability.findMany({
       where: {
         ...(environment ? { environmentName: environment } : {}),
-        ...(component ? { component } : {})
+        ...(component ? { component } : {}),
+        ...(componentType ? { componentType } : {})
       },
       orderBy: { updatedAt: "desc" },
       take: limit,

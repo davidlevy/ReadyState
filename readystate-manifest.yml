@@ -1,4 +1,5 @@
 component: readystate-core
+componentType: api
 capabilities:
   - id: core-webhook-ingestion
     description: Ingestion des webhooks de déploiement GitHub et synchronisation SQLite

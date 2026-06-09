@@ -20,6 +20,7 @@ model Environment {
 model Capability {
   capabilityId    String
   component       String      @default("default")
+  componentType   String?
   description     String
   requiredFlag    String?
   annotations     String?
