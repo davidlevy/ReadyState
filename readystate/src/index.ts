@@ -76,11 +76,12 @@ app.post('/webhooks/github', async (c) => {
         const manifest = YAML.parse(manifestText)
         
         if (manifest.capabilities && Array.isArray(manifest.capabilities)) {
+          const component = manifest.component || 'default';
           for (const cap of manifest.capabilities) {
             if (cap.id && cap.description !== undefined) {
               const annotationsStr = cap.annotations ? JSON.stringify(cap.annotations) : null;
               await prisma.capability.upsert({
-                where: { capabilityId_environmentName: { capabilityId: cap.id, environmentName: environment } },
+                where: { capabilityId_environmentName_component: { capabilityId: cap.id, environmentName: environment, component } },
                 update: { 
                   description: cap.description,
                   requiredFlag: cap.requiredFlag || null,
@@ -91,7 +92,8 @@ app.post('/webhooks/github', async (c) => {
                   description: cap.description, 
                   requiredFlag: cap.requiredFlag || null,
                   annotations: annotationsStr,
-                  environmentName: environment 
+                  environmentName: environment,
+                  component
                 }
               })
               capabilitiesCount++

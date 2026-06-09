@@ -231,3 +231,16 @@ Tu construis "ReadyState", un bus d'état M2M (Machine-to-Machine) qui permet au
    - Modifie `src/index.ts` pour s'assurer que le champ `environment` récupéré de GitHub est également normalisé.
 4. **Validation :**
    - Teste l'outil `get_capability_status` avec l'environnement `prod` et confirme qu'il retourne bien les données de `production`.
+
+## <Task 15: Isolation des Capacités par Component (Multi-Repo)>
+**Objectif :** Empêcher les collisions de `capabilityId` entre différents dépôts (ex: backend vs frontend) en introduisant une notion de `component` (standard Backstage).
+
+1. **Mise à jour du Schéma (Prisma) :**
+   - Dans `schema.prisma`, ajoute le champ `component String @default("default")` au modèle `Capability`.
+   - Modifie la clé primaire composite : `@@id([capabilityId, environmentName, component])`.
+   - Exécute la mise à jour de la base de données.
+2. **Mise à jour du Serveur MCP (`src/mcp.ts`) :**
+   - Modifie `upsert_capability` pour requérir `component` et mettre à jour l'appel Prisma.
+   - Modifie `get_capability_status` et `list_recent_capabilities` pour accepter `component` comme filtre optionnel.
+3. **Mise à jour du Manifeste :**
+   - Ajoute `component: "nom-du-composant"` dans `readystate-manifest.yml`.

@@ -19,6 +19,7 @@ model Environment {
 
 model Capability {
   capabilityId    String
+  component       String      @default("default")
   description     String
   requiredFlag    String?
   annotations     String?
@@ -29,5 +30,5 @@ model Capability {
   createdBy       String      @default("unknown")
   updatedBy       String      @default("unknown")
 
-  @@id([capabilityId, environmentName])
+  @@id([capabilityId, environmentName, component])
 }

@@ -14,8 +14,10 @@ description: Ensures that the readystate-manifest.yml file is always kept in syn
 
 1. You must automatically declare the new feature in the `readystate-manifest.yml` file located at the root of the project.
 2. Do not wait for the user to ask you to update the manifest. Do it proactively as part of your implementation task.
-3. The format of an entry in `readystate-manifest.yml` is as follows:
+3. The format of the `readystate-manifest.yml` file must include a top-level `component` string and a `capabilities` list:
    ```yaml
+   component: my-service-name
+   capabilities:
    - id: kebab-case-name-of-the-feature
      description: A clear, concise description of what the feature does (in English or match the existing language).
      requiredFlag: optional_feature_flag_name # Omit this line completely if there is no flag

@@ -48,6 +48,7 @@ async function main() {
     arguments: {
       capabilityId: "api-checkout-v3",
       environment: "staging",
+      component: "backend",
       description: "Test description for v3",
       requiredFlag: "test_flag_v3",
       annotations: { "test/issue": "123" },
@@ -62,6 +63,7 @@ async function main() {
     arguments: {
       capabilityId: "api-checkout-v3",
       environment: "production",
+      component: "frontend",
       description: "Test description for v3",
       requiredFlag: "test_flag_v3",
       annotations: { "test/issue": "456" },
@@ -75,6 +77,7 @@ async function main() {
     name: "get_capability_status",
     arguments: {
       environment: "staging",
+      component: "backend",
       annotationKey: "test/issue",
       annotationValue: "123"
     }
