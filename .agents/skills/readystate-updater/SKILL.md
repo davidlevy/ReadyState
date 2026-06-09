@@ -10,6 +10,12 @@ description: Ensures that the readystate-manifest.yml file is always kept in syn
 - Use this whenever you implement a new feature, capability, integration, or tool in the project.
 - This is helpful for keeping our capability registry up-to-date and enabling dogfooding of the ReadyState platform.
 
+## What Qualifies as a Capability?
+**CRITICAL RULE: Do not pollute the manifest with noise.**
+- **DO NOT** add internal refactors, private functions, minor UI tweaks, or bug fixes.
+- **DO** add public APIs, shared components, feature flags, or event queues.
+- **Rule of Thumb:** Only add a capability to the manifest if it exposes a contract or state that another team member (human or AI agent) might depend on or need to know about to unblock their own work.
+
 ## How to use it
 
 1. You must automatically declare the new feature in the `readystate-manifest.yml` file located at the root of the project.
