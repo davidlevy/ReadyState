@@ -60,6 +60,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                     properties: {
                         environment: { type: "string" },
                         capabilityId: { type: "string" },
+                        component: { type: "string" },
                         annotationKey: { type: "string" },
                         annotationValue: { type: "string" },
                     },
@@ -73,7 +74,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                     "type": "object",
                     "properties": {
                         "limit": { "type": "integer", "description": "Maximum number of results to return (default 10)" },
-                        "environment": { "type": "string", "description": "Filter by specific environment (optional)" }
+                        "environment": { "type": "string", "description": "Filter by specific environment (optional)" },
+                        "component": { "type": "string", "description": "Filter by specific component (optional)" },
+                        "componentType": { "type": "string", "description": "Filter by specific component type (optional)" }
                     }
                 }
             },
@@ -85,12 +88,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                     properties: {
                         capabilityId: { type: "string" },
                         environment: { type: "string" },
+                        component: { type: "string" },
                         description: { type: "string" },
                         requiredFlag: { type: "string" },
                         annotations: { type: "object", additionalProperties: { type: "string" } },
                         author: { type: "string", description: "Identifier of the agent or user performing the action." }
                     },
-                    required: ["capabilityId", "environment", "description", "author"]
+                    required: ["capabilityId", "environment", "component", "description", "author"]
                 }
             }
         ],
@@ -101,12 +105,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const args = request.params.arguments;
         const capabilityId = args.capabilityId;
         const environment = normalizeEnvironment(args.environment);
+        const component = args.component;
         const annotationKey = args.annotationKey;
         const annotationValue = args.annotationValue;
         let capability = null;
         if (capabilityId) {
             capability = await prisma.capability.findFirst({
-                where: { capabilityId, environmentName: environment },
+                where: {
+                    capabilityId,
+                    environmentName: environment,
+                    ...(component ? { component } : {})
+                },
             });
         }
         else if (annotationKey && annotationValue) {
@@ -116,6 +125,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             capability = await prisma.capability.findFirst({
                 where: {
                     environmentName: environment,
+                    ...(component ? { component } : {}),
                     annotations: { contains: searchString }
                 },
             });
@@ -153,8 +163,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const args = request.params.arguments || {};
         const limit = typeof args.limit === "number" ? args.limit : 10;
         const environment = typeof args.environment === "string" ? normalizeEnvironment(args.environment) : undefined;
+        const component = typeof args.component === "string" ? args.component : undefined;
+        const componentType = typeof args.componentType === "string" ? args.componentType : undefined;
         const capabilities = await prisma.capability.findMany({
-            where: environment ? { environmentName: environment } : undefined,
+            where: {
+                ...(environment ? { environmentName: environment } : {}),
+                ...(component ? { component } : {}),
+                ...(componentType ? { componentType } : {})
+            },
             orderBy: { updatedAt: "desc" },
             take: limit,
         });
@@ -176,13 +192,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const args = request.params.arguments;
         const capabilityId = args.capabilityId;
         const environment = normalizeEnvironment(args.environment);
+        const component = args.component;
         const description = args.description;
         const requiredFlag = args.requiredFlag;
         const annotations = args.annotations;
         const author = args.author;
         const annotationsStr = annotations ? JSON.stringify(annotations) : null;
         const capability = await prisma.capability.upsert({
-            where: { capabilityId_environmentName: { capabilityId, environmentName: environment } },
+            where: { capabilityId_environmentName_component: { capabilityId, environmentName: environment, component } },
             update: {
                 description,
                 requiredFlag: requiredFlag || null,
@@ -195,6 +212,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 requiredFlag: requiredFlag || null,
                 annotations: annotationsStr,
                 environmentName: environment,
+                component,
                 createdBy: author,
                 updatedBy: author,
             },

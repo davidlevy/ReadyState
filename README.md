@@ -92,3 +92,29 @@ curl -f -X POST "$READYSTATE_SYNC_URL" \
 You can monitor the health of your ReadyState instance using its built-in DevOps routes:
 - **`GET /health`** : Returns 200 OK and verifies the SQLite connection.
 - **`GET /metrics`** : Returns the active environment count, capability count, and server uptime.
+
+### 6. Integrating with AI Agents (MCP Server)
+
+You can connect your favorite AI assistants (Claude Code, Gemini, Cursor, Claude Desktop, etc.) to ReadyState so they can query deployment status locally before making code changes.
+
+To integrate the MCP Server, add the following configuration to your agent's MCP configuration file (e.g., `~/.gemini/config/mcp_config.json`, `~/.claude.json`, or Cursor's MCP settings):
+
+```json
+{
+  "mcpServers": {
+    "readystate": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-v", "/absolute/path/to/ReadyState/data:/app/data",
+        "readystate",
+        "node",
+        "dist/src/mcp.js"
+      ]
+    }
+  }
+}
+```
+*Note: Make sure to replace `/absolute/path/to/ReadyState/data` with the actual path to your local `data` directory, so the MCP server can access the SQLite database.*

@@ -2,7 +2,7 @@
   "name": "readystate",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "concurrently \"tsx watch src/index.ts\" \"tsc -w\"",
     "build": "tsc",
     "start": "node dist/src/index.js",
     "mcp": "node dist/src/mcp.js",
@@ -18,6 +18,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
+    "concurrently": "^9.2.1",
     "prisma": "^5.22.0",
     "tsx": "^4.7.1",
     "typescript": "^5.8.3"

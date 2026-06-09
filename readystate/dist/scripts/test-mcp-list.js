@@ -3,6 +3,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import * as dotenv from "dotenv";
 dotenv.config();
 async function main() {
+    const envArg = process.argv[2];
     const transport = new StdioClientTransport({
         command: "npx",
         args: ["tsx", "src/mcp.ts"],
@@ -14,10 +15,10 @@ async function main() {
     });
     const client = new Client({ name: "test-client", version: "1.0.0" }, { capabilities: {} });
     await client.connect(transport);
-    console.log("Calling list_recent_capabilities via MCP...");
+    console.log(`Calling list_recent_capabilities via MCP${envArg ? ` for environment: ${envArg}` : ''}...`);
     const result = await client.callTool({
         name: "list_recent_capabilities",
-        arguments: { limit: 10 }
+        arguments: { limit: 10, ...(envArg ? { environment: envArg } : {}) }
     });
     const content = result.content;
     console.log(content[0].text);

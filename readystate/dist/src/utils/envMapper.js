@@ -9,8 +9,9 @@ export function normalizeEnvironment(env) {
     // Default aliases
     const aliases = {
         prod: 'production',
+        prd: 'production',
         stg: 'staging',
-        dev: 'development',
+        dev: 'development'
     };
     // Override with environment variable if present
     // Expected format: ENV_ALIASES="prod=production,stg=staging,pre=preprod"

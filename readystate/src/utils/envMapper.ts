@@ -11,8 +11,9 @@ export function normalizeEnvironment(env: string): string {
   // Default aliases
   const aliases: Record<string, string> = {
     prod: 'production',
+    prd: 'production',
     stg: 'staging',
-    dev: 'development',
+    dev: 'development'
   };
 
   // Override with environment variable if present
