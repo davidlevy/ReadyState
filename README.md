@@ -9,15 +9,15 @@ At the heart of ReadyState is the **Declarative Sync** architecture. It decouple
 ```mermaid
 graph TD
     subgraph "CI/CD (Monorepo or Polyrepo)"
-        CI1[Frontend Pipeline]
-        CI2[Backend Pipeline]
-        CI3[AI Worker Pipeline]
+        CI1["Frontend Pipeline"]
+        CI2["Backend Pipeline"]
+        CI3["AI Worker Pipeline"]
     end
 
     subgraph "ReadyState Infrastructure"
-        API[Hono API (POST /api/sync)]
-        DB[(SQLite Database)]
-        MCP[MCP Server Interface]
+        API["Hono API (POST /api/sync)"]
+        DB[("SQLite Database")]
+        MCP["MCP Server Interface"]
         
         API -->|Upserts & Garbage Collects| DB
         MCP -->|Reads true deployment state| DB
