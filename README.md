@@ -47,23 +47,36 @@ graph TD
 
 Deploying ReadyState is extremely simple as it is fully containerized.
 
-### 1. Initial Setup
-The application requires secure tokens to authorize CI pipelines (Write) and AI agents (Read).
-ReadyState automatically generates these on the first boot via its Docker Entrypoint.
+### 1. Cloud Providers (Recommended)
 
-### 2. Running with Docker Compose
-To build and start the service in the background:
+**Render:**  
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+*(Note: If configuring Render manually, make sure to set the Root Directory to `readystate`)*
+
+**Fly.io:**
 ```bash
-docker compose up -d --build
+cd readystate
+fly launch
+fly deploy
 ```
-*Note: The `--build` flag is crucial after pulling new code to ensure the Hono API and MCP Server use the latest TypeScript compilation.*
+
+### 2. Running Locally
+To build and start the service using Docker:
+```bash
+cd readystate
+docker build -t readystate .
+docker run -d -p 3000:3000 -v $(pwd)/data:/app/data readystate
+```
 
 ### 3. Extracting your Security Tokens
-Once the container is running, the entrypoint will have generated your secure tokens in the `data/` volume.
-Read them with:
+Whether you deploy to the cloud or locally, the application requires secure tokens to authorize CI pipelines (Write) and AI agents (Read). ReadyState automatically generates these on the first boot. 
+
+Locally, you can read them with:
 ```bash
 cat data/.env
 ```
+In the cloud, check your container's startup logs or access the persistent volume to retrieve them.
+
 You will see:
 ```env
 READYSTATE_READ_TOKEN=rs_read_...
@@ -97,7 +110,35 @@ You can monitor the health of your ReadyState instance using its built-in DevOps
 
 You can connect your favorite AI assistants (Claude Code, Gemini, Cursor, Claude Desktop, etc.) to ReadyState so they can query deployment status locally before making code changes.
 
-To integrate the MCP Server, add the following configuration to your agent's MCP configuration file (e.g., `~/.gemini/config/mcp_config.json`, `~/.claude.json`, or Cursor's MCP settings):
+#### Option A: Self-hosted / Cloud (Fly.io, Render, VPS)
+Since the SQLite database lives on your remote server, the best way to run the MCP server is via an SSH connection. 
+
+**For Fly.io:**
+```json
+{
+  "mcpServers": {
+    "readystate": {
+      "command": "fly",
+      "args": ["ssh", "console", "-q", "-C", "node /app/dist/src/mcp.js", "-a", "your-fly-app-name"]
+    }
+  }
+}
+```
+
+**For standard VPS over SSH:**
+```json
+{
+  "mcpServers": {
+    "readystate": {
+      "command": "ssh",
+      "args": ["user@yourdomain.com", "node", "/app/dist/src/mcp.js"]
+    }
+  }
+}
+```
+
+#### Option B: Running Locally via Docker
+If you are running ReadyState locally, add the following configuration to your agent's MCP settings:
 
 ```json
 {
@@ -117,4 +158,4 @@ To integrate the MCP Server, add the following configuration to your agent's MCP
   }
 }
 ```
-*Note: Make sure to replace `/absolute/path/to/ReadyState/data` with the actual path to your local `data` directory, so the MCP server can access the SQLite database.*
+*Note: Make sure to replace `/absolute/path/to/ReadyState/data` with the actual path to your local `data` directory.*
